@@ -1,0 +1,15 @@
+# Arquivos que nao precisam ficar acessiveis pela web
+<FilesMatch "^(schema\.sql|README\.md|DEPLOY\.md|\.gitignore)$">
+  Require all denied
+</FilesMatch>
+
+Options -Indexes
+
+# O service worker nunca deve ficar preso no cache do navegador
+<FilesMatch "^sw\.js$">
+  Header set Cache-Control "no-cache"
+</FilesMatch>
+
+<IfModule mod_mime.c>
+  AddType application/manifest+json .webmanifest
+</IfModule>
