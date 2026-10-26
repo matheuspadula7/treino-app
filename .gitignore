@@ -1,0 +1,11 @@
+# Segredos e dados: nunca vao para o repositorio
+api/config.php
+treino-private/
+storage/*
+!storage/.htaccess
+
+# Instalador de uma vez so: use tools/install.php.sample so quando precisar recriar as tabelas
+api/install.php
+
+*.zip
+.DS_Store
