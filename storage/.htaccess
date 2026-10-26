@@ -1,0 +1,6 @@
+# Fotos e prints so sao entregues pela API, depois do login
+Require all denied
+<IfModule !mod_authz_core.c>
+  Order allow,deny
+  Deny from all
+</IfModule>
