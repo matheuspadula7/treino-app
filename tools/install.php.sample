@@ -1,0 +1,33 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * Instalador de uma vez so: cria as tabelas no banco.
+ * Acesse /api/install.php?key=SUA_SENHA_DO_APP e depois APAGUE este arquivo do servidor.
+ */
+require __DIR__ . '/lib.php';
+header('Content-Type: text/plain; charset=utf-8');
+
+if (!check_password((string) ($_GET['key'] ?? ''))) {
+    http_response_code(403);
+    exit("Acesso negado. Use ?key=SUA_SENHA\n");
+}
+
+$sql = file_get_contents(dirname(__DIR__) . '/schema.sql');
+if ($sql === false) {
+    exit("schema.sql não encontrado na raiz do app.\n");
+}
+
+$pdo = db();
+$count = 0;
+foreach (array_filter(array_map('trim', explode(';', $sql))) as $stmt) {
+    $clean = trim(preg_replace('/^--.*$/m', '', $stmt));
+    if ($clean === '') {
+        continue;
+    }
+    $pdo->exec($clean);
+    $count++;
+}
+ensure_user();
+echo "Instalação concluída: $count comandos executados.\n";
+echo "Agora APAGUE o arquivo api/install.php do servidor.\n";
