@@ -1,1 +1,4 @@
-
+# Somente index.php e install.php (temporario) devem ser chamados direto
+<FilesMatch "^(config.*|lib|h_.*|plangen|vision)\.php$">
+  Require all denied
+</FilesMatch>
