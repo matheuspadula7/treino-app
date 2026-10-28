@@ -235,10 +235,13 @@ function handle_set_delete(int $uid): void
 
 function handle_workout_watch(int $uid): void
 {
-    $w = own_workout($uid, (int) param('workout_id', 0), true);
+    $w = own_workout($uid, (int) param('workout_id', 0));
     $name = save_upload('image');
     if ($name === null) {
         fail('Envie o print do relatório do relógio');
+    }
+    if ($w['watch_image'] && preg_match('/^[a-f0-9]{24}\.(jpg|png|webp)$/', $w['watch_image']) && $w['watch_image'] !== $name) {
+        @unlink(storage_dir() . '/' . $w['watch_image']);
     }
     db()->prepare('UPDATE workouts SET watch_image = ? WHERE id = ?')->execute([$name, $w['id']]);
     $path = storage_dir() . '/' . $name;
@@ -342,6 +345,56 @@ function handle_workout_finish(int $uid): void
     out(['feedback' => $fb, 'workout_id' => (int) $w['id']]);
 }
 
+function handle_workout_edit(int $uid): void
+{
+    $w = own_workout($uid, (int) param('workout_id', 0));
+    if ($w['status'] !== 'finalizado') {
+        fail('Edite o treino pela tela de treino em andamento', 409);
+    }
+    $exs = param('exercises', []);
+    if (!is_array($exs) || count($exs) > 40) {
+        fail('Dados do treino inválidos');
+    }
+    $pdo = db();
+    $when = $w['finished_at'] ?: now();
+    $pdo->beginTransaction();
+    try {
+        $pdo->prepare('DELETE FROM workout_sets WHERE workout_id = ?')->execute([$w['id']]);
+        $ins = $pdo->prepare('INSERT INTO workout_sets (workout_id, exercise_name, set_number, reps, weight_kg, done_at)
+            VALUES (?, ?, ?, ?, ?, ?)');
+        foreach ($exs as $ex) {
+            $name = mb_substr(trim((string) ($ex['name'] ?? '')), 0, 100);
+            $sets = is_array($ex['sets'] ?? null) ? array_slice($ex['sets'], 0, 20) : [];
+            if ($name === '') {
+                continue;
+            }
+            $n = 0;
+            foreach ($sets as $s) {
+                $reps = intval_or_null($s['reps'] ?? null);
+                $weight = num($s['weight_kg'] ?? null, 2);
+                if ($reps === null && $weight === null) {
+                    continue;
+                }
+                $n++;
+                $ins->execute([$w['id'], $name, $n, $reps, $weight, $when]);
+            }
+        }
+        $notes = mb_substr((string) param('notes', ''), 0, 250);
+        $pdo->prepare('UPDATE workouts SET duration_min = ?, calories = ?, avg_hr = ?, max_hr = ?, distance_km = ?, notes = ?
+            WHERE id = ?')->execute([intval_or_null(param('duration_min')), intval_or_null(param('calories')),
+            intval_or_null(param('avg_hr')), intval_or_null(param('max_hr')), num(param('distance_km'), 2),
+            $notes !== '' ? $notes : null, $w['id']]);
+        $pdo->commit();
+    } catch (Throwable $e) {
+        $pdo->rollBack();
+        fail('Não consegui salvar a edição', 500);
+    }
+    $w = own_workout($uid, (int) $w['id']);
+    $fb = build_feedback($uid, $w);
+    $pdo->prepare('UPDATE workouts SET feedback = ? WHERE id = ?')->execute([$fb, $w['id']]);
+    out(['ok' => true, 'feedback' => $fb]);
+}
+
 function handle_workout_cancel(int $uid): void
 {
     $w = own_workout($uid, (int) param('workout_id', 0), true);
@@ -378,6 +431,13 @@ function handle_history_get(int $uid): void
         $list[] = ['name' => $name, 'sets' => $sets];
     }
     $w['exercises'] = $list;
+    $planned = [];
+    $snap = $w['plan_snapshot'] ? json_decode($w['plan_snapshot'], true) : [];
+    foreach (is_array($snap) ? $snap : [] as $ex) {
+        $planned[] = ['name' => $ex['name'], 'kind' => $ex['kind'] ?? 'strength', 'sets' => (int) ($ex['sets'] ?? 3),
+            'rep_max' => (int) ($ex['rep_max'] ?? 10)];
+    }
+    $w['planned'] = $planned;
     unset($w['plan_snapshot']);
     out(['workout' => $w]);
 }

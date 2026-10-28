@@ -47,6 +47,7 @@ $routes = [
     'workout_watch'    => 'handle_workout_watch',
     'workout_finish'   => 'handle_workout_finish',
     'workout_cancel'   => 'handle_workout_cancel',
+    'workout_edit'     => 'handle_workout_edit',
     'history'          => 'handle_history',
     'history_get'      => 'handle_history_get',
     'stats'            => 'handle_stats',

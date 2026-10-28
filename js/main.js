@@ -61,7 +61,7 @@ async function route() {
   document.body.classList.toggle('in-workout', page === 'workout');
   document.body.classList.toggle('no-tabs', focus);
   nav.hidden = focus;
-  if (!focus) renderTabs(page);
+  if (!focus) renderTabs(page === 'editar' ? 'historico' : page);
 
   try {
     if (!App.state.profile && page !== 'perfil') return App.go('#/perfil');
@@ -70,6 +70,7 @@ async function route() {
       case 'ficha': return await viewPlan();
       case 'corpo': return await viewBody();
       case 'historico': return await viewHistory();
+      case 'editar': return await viewEditWorkout();
       case 'perfil': return await viewProfile();
       case 'workout': return await viewWorkout();
       case 'finalizar': return await viewFinish();
