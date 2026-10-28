@@ -43,7 +43,7 @@ function sheet(build, onClose) {
   const close = () => { root.replaceChildren(); if (!closed) { closed = true; if (onClose) onClose(); } };
   const box = el('div', { class: 'sheet' });
   const back = el('div', { class: 'back', onclick: (e) => { if (e.target === back) close(); } }, box);
-  box.append(...[].concat(build(close)));
+  box.append(...[].concat(build(close)).flat().filter((x) => x !== null && x !== undefined && x !== false));
   root.replaceChildren(back);
   return close;
 }

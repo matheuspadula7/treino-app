@@ -1,6 +1,6 @@
 // Service worker: guarda o "casco" do app para abrir rapido e funcionar mesmo com sinal ruim.
 // A API nunca entra no cache.
-const VERSION = 'treino-v6';
+const VERSION = 'treino-v7';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css',
   'js/api.js', 'js/ui.js', 'js/v_home.js', 'js/v_profile.js', 'js/v_plan.js',
