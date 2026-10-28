@@ -5,8 +5,8 @@
 
 Options -Indexes
 
-# O service worker nunca deve ficar preso no cache do navegador
-<FilesMatch "^sw\.js$">
+# O navegador sempre confere se ha versao nova dos arquivos do app (evita celular preso em versao antiga)
+<FilesMatch "\.(js|css|html|webmanifest)$">
   Header set Cache-Control "no-cache"
 </FilesMatch>
 

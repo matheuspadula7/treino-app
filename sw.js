@@ -1,6 +1,6 @@
 // Service worker: guarda o "casco" do app para abrir rapido e funcionar mesmo com sinal ruim.
 // A API nunca entra no cache.
-const VERSION = 'treino-v7';
+const VERSION = 'treino-v8';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css',
   'js/api.js', 'js/ui.js', 'js/v_home.js', 'js/v_profile.js', 'js/v_plan.js',
@@ -10,7 +10,7 @@ const SHELL = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION).then((c) => Promise.all(SHELL.map((u) => c.add(new Request(u, { cache: 'reload' }))))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {
@@ -26,7 +26,7 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET' || url.origin !== location.origin || url.pathname.includes('/api/')) return;
   // Rede primeiro (pega atualizacoes), cache como reserva
   e.respondWith(
-    fetch(req).then((res) => {
+    fetch(req, { cache: 'no-cache' }).then((res) => {
       const copy = res.clone();
       caches.open(VERSION).then((c) => c.put(req, copy));
       return res;
